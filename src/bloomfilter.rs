@@ -1,3 +1,5 @@
+use std::ops::BitOr;
+
 use bitvec::prelude::*;
 use fastmurmur3;
 
@@ -10,11 +12,9 @@ pub struct BloomFilter {
 
 impl BloomFilter {
     pub fn new(hash_count: u32, capacity: usize) -> BloomFilter {
-        let blah = bitvec!(u8, Lsb0; 0; capacity);
-
         return BloomFilter {
             hash_count,
-            buf: blah,
+            buf: bitvec!(u8, Lsb0; 0; capacity),
             capacity,
         };
     }
@@ -68,5 +68,22 @@ impl BloomFilter {
                 buf: BitVec::from_slice(buf),
             })
         }
+    }
+
+    // TODO custom error types
+    // TODO think about if there's a way of making this mutable instead
+    // of consuming the source andif it even makes sense
+    pub fn merge_from(self, other: Self) -> Result<BloomFilter, &'static str> {
+        if self.capacity != other.capacity { return Err("Capacities don't match"); }
+
+        if self.hash_count != other.hash_count { return Err("Hash counts don't match"); }
+
+        if self.buf.len() != other.buf.len() { return Err("Buffer sizes do not match") }
+
+        Ok(BloomFilter {
+            capacity: self.capacity,
+            hash_count: self.hash_count,
+            buf: self.buf.bitor(other.buf)
+        }) 
     }
 }

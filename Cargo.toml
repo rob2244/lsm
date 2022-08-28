@@ -10,6 +10,8 @@ byteorder = "1.4.3"
 log = "0.4.17"
 bitvec = "1"
 fastmurmur3 = "0.1.2"
+timer = "0.2.0"
+chrono = "0.4"
 
 [dependencies.uuid]
 version = "1.1.2"

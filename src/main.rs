@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::{path::Path, time::Duration};
 
 mod bloomfilter;
 /// LSM Tree Outline
@@ -27,28 +27,36 @@ mod bloomfilter;
 /// record. There is currently no file footer
 ///
 /// LSM Tree compaction
-/// A background thread will run occasionally and trigger LSM tree compaction.
-/// In order to do this, it will read the data from the existing LSM file
-/// and write out a new file with all the data ordered correctly
+// There is a folder with all the mem table files in it.
+// Periodically a thread should run to decide whether or not 
+// files should be merged based on a MergePredicate. If the thread finds 
+// that two files should be merged, it should call merge_files. It should leave
+// the original files remain accessible for reads by other threads until 
+// the merging is done at which point the mergingin thread waits for any reads to
+// the old files to finish then deletes them
+// This may require some sort of reader/writer lock scheme on shared file handles
 mod memtable;
 use memtable::{DataRecord, MemTableManager};
 
 fn main() {
-    let mut mtm = MemTableManager::new(Path::new("data").to_path_buf()).unwrap();
+    let mut mtm = 
+        MemTableManager::new(Path::new("data").to_path_buf(), 
+            | _ | true, 
+            Duration::from_secs(60)).unwrap();
 
-    // for i in 1..100 {
-    //     if let Err(err) = mtm.write(
-    //         DataRecord::new(i,
-    //                         format!("user#{}", i),
-    //                         format!("user#{}@gmail.com", i),
-    //                         "1234567892".to_string())
-    //             .unwrap()) {
-    //         println!("{}", err)
-    //     }
-    // }
+    for i in 1..1000 {
+        if let Err(err) = mtm.write(
+            DataRecord::new(i,
+                            format!("user#{}", i),
+                            format!("user#{}@gmail.com", i),
+                            "1234567892".to_string())
+                .unwrap()) {
+            println!("{}", err)
+        }
+    }
 
-    // let record = mtm.read(12);
-    // println!("{:?}", record);
-    mtm.merge_files(&Path::new("C:\\Users\\roseitz\\source\\repos\\lsm\\main\\data\\0a691312-d36f-4344-9c31-1f12266e2a90"), 
-                    &Path::new("C:\\Users\\roseitz\\source\\repos\\lsm\\main\\data\\19752a4b-19c6-462e-8755-7489332215fb")).unwrap()
+    let record = mtm.read(12);
+    println!("{:?}", record);
+
+    loop { }
 }
